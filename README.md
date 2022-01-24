@@ -14,6 +14,10 @@ bastien.rigaud@univ-rennes1.fr
 
 ## Example 
 
+<p align="center">
+    <img src="example/plot.PNG" height=350>
+</p>
+
 ```
     filepath = r'C:\Data\Data_test\test_2.vtk'
     reader1 = vtk.vtkPolyDataReader()
