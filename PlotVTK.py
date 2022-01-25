@@ -54,7 +54,7 @@ def append_polydata(polydata_list=[]):
 
 
 # TODO add dvf with glyph
-# TODO add multiview?
+# TODO add multiview? reference / moving / deformation vector field
 def plot_vtk(polydata, secondary=None, opacity=.5):
     '''
     :param polydata: polydata or list of polydata to plot
