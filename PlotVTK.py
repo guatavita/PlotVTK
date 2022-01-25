@@ -53,6 +53,25 @@ def append_polydata(polydata_list=[]):
     return append_filter.GetOutput()
 
 
+class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.AddObserver("KeyPressEvent", self.key_press_event)
+
+    def key_press_event(self, obj, event):
+        key = self.parent.GetKeySym()
+        if key == 'q':
+            print('closing PlotVTK window')
+            self.close_window()
+        return
+
+    def close_window(self):
+        render_window = self.parent.GetRenderWindow()
+        render_window.Finalize()
+        self.parent.TerminateApp()
+        del render_window, self.parent
+
+
 # TODO add dvf with glyph
 # TODO add multiview? reference / moving / deformation vector field
 def plot_vtk(polydata, secondary=None, opacity=.5):
@@ -127,7 +146,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     # Create the RendererWindowInteractor and display the vtk_file
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renderer_window)
-    interactor.SetInteractorStyle(vtk.vtkInteractorStyleTrackballCamera())
+    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor))
 
     om.SetInteractor(interactor)
     om.EnabledOn()
@@ -138,7 +157,20 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     if secondary:
         renderer.AddActor(sec_actor)
 
+    # add corner annotation
+    colors = vtk.vtkNamedColors()
+    cornerAnnotation = vtk.vtkCornerAnnotation()
+    cornerAnnotation.SetLinearFontScaleFactor(2)
+    cornerAnnotation.SetNonlinearFontScaleFactor(1)
+    cornerAnnotation.SetMaximumFontSize(20)
+    # cornerAnnotation.SetText(0, "lower left")
+    cornerAnnotation.SetText(1, "Press key Q to quit")
+    # cornerAnnotation.SetText(2, "upper left")
+    # cornerAnnotation.SetText(3, "upper right")
+    cornerAnnotation.GetTextProperty().SetColor(colors.GetColor3d("Black"))
+
     # Render and interact
+    renderer.AddViewProp(cornerAnnotation)
     renderer_window.Render()
     renderer.GetActiveCamera().Zoom(.8)
     renderer_window.Render()
