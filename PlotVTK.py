@@ -121,7 +121,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
 
     # Create the Actor
     actor = vtk.vtkActor()
-    actor.GetProperty().SetOpacity(opacity);
+    actor.GetProperty().SetOpacity(opacity)
     actor.SetMapper(mapper)
 
     if secondary:
@@ -129,7 +129,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
         sec_mapper_.SetInputData(secondary)
         sec_mapper_.SetScalarRange(scalar_range)
         sec_actor = vtk.vtkActor()
-        sec_actor.GetProperty().SetOpacity(opacity);
+        sec_actor.GetProperty().SetOpacity(opacity)
         sec_actor.SetMapper(sec_mapper_)
 
     # Create the Renderer
