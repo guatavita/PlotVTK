@@ -45,8 +45,7 @@ def append_polydata(polydata_list=[]):
         array_names = [temp.GetPointData().GetArrayName(arrayid) for arrayid in
                        range(temp.GetPointData().GetNumberOfArrays())]
         if 'label_color' not in array_names:
-            ntype = numpy_support.get_numpy_array_type(temp.GetPoints().GetDataType())
-            label_color = numpy_support.numpy_to_vtk(i * np.ones(temp.GetNumberOfPoints(), dtype=ntype), deep=1)
+            label_color = numpy_support.numpy_to_vtk(i * np.ones(temp.GetNumberOfPoints()))
             label_color.SetName('label_color')
             temp.GetPointData().SetScalars(label_color)
         append_filter.AddInputData(temp)
