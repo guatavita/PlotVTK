@@ -40,14 +40,16 @@ def append_polydata(polydata_list=[]):
     append_filter = vtk.vtkAppendPolyData()
     i = 0
     for poly in polydata_list:
-        array_names = [poly.GetPointData().GetArrayName(arrayid) for arrayid in
-                       range(poly.GetPointData().GetNumberOfArrays())]
+        temp = vtk.vtkPolyData()
+        temp.DeepCopy(poly)
+        array_names = [temp.GetPointData().GetArrayName(arrayid) for arrayid in
+                       range(temp.GetPointData().GetNumberOfArrays())]
         if 'label_color' not in array_names:
-            ntype = numpy_support.get_numpy_array_type(poly.GetPoints().GetDataType())
-            label_color = numpy_support.numpy_to_vtk(i * np.ones(poly.GetNumberOfPoints(), dtype=ntype), deep=1)
+            ntype = numpy_support.get_numpy_array_type(temp.GetPoints().GetDataType())
+            label_color = numpy_support.numpy_to_vtk(i * np.ones(temp.GetNumberOfPoints(), dtype=ntype), deep=1)
             label_color.SetName('label_color')
-            poly.GetPointData().SetScalars(label_color)
-        append_filter.AddInputData(poly)
+            temp.GetPointData().SetScalars(label_color)
+        append_filter.AddInputData(temp)
         i += 1
     append_filter.Update()
     return append_filter.GetOutput()
@@ -125,12 +127,12 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     actor.SetMapper(mapper)
 
     if secondary:
-        sec_mapper_ = vtk.vtkDataSetMapper()
-        sec_mapper_.SetInputData(secondary)
-        sec_mapper_.SetScalarRange(scalar_range)
+        sec_mapper = vtk.vtkDataSetMapper()
+        sec_mapper.SetInputData(secondary)
+        sec_mapper.SetScalarRange(scalar_range)
         sec_actor = vtk.vtkActor()
         sec_actor.GetProperty().SetOpacity(opacity)
-        sec_actor.SetMapper(sec_mapper_)
+        sec_actor.SetMapper(sec_mapper)
 
     # Create the Renderer
     renderer = vtk.vtkRenderer()
@@ -158,7 +160,6 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
         renderer.AddActor(sec_actor)
 
     # add corner annotation
-    colors = vtk.vtkNamedColors()
     cornerAnnotation = vtk.vtkCornerAnnotation()
     cornerAnnotation.SetLinearFontScaleFactor(2)
     cornerAnnotation.SetNonlinearFontScaleFactor(1)
