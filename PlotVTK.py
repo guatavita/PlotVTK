@@ -57,10 +57,16 @@ def append_polydata(polydata_list=[]):
 
 
 class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
-    def __init__(self, parent=None, mapper=None):
+    def __init__(self, parent=None, mapper=None, glyph_actor=None):
         self.parent = parent
         self.mapper = mapper
-        self.polydata = mapper.GetInput()
+        self.glyph_actor = glyph_actor
+        self.glyph_opacity = glyph_actor.GetProperty().GetOpacity() if glyph_actor else 0.0
+
+        self.polydata = vtk.vtkPolyData()
+        self.polydata.DeepCopy(mapper.GetInput())
+        self.warp_filter = vtk.vtkWarpVector()
+        self.warp_factor = 10
         self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
                             range(self.polydata.GetPointData().GetNumberOfArrays())]
         self.index_scalar = 0
@@ -72,14 +78,40 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             print(' PlotVTK: closing PlotVTK window')
             self.close_window()
         if key == 't':
+            if len(self.array_names) == 0:
+                print(' PlotVTK: no scalars found')
+                return
             self.index_scalar += 1
             if self.index_scalar == len(self.array_names):
                 self.index_scalar = 0
             print(' PlotVTK: changing scalar to {}'.format(self.array_names[self.index_scalar]))
-            self.polydata.GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
+            self.mapper.GetInput().GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
             self.mapper.SetScalarRange(self.polydata.GetPointData().GetArray(self.index_scalar).GetRange())
             render_window = self.parent.GetRenderWindow()
             render_window.Render()
+        if key == 'g':
+            if not self.glyph_actor:
+                print(' PlotVTK: no vectors found')
+                return
+            current_opacity = self.glyph_actor.GetProperty().GetOpacity()
+            self.glyph_actor.GetProperty().SetOpacity(abs(current_opacity - self.glyph_opacity))
+            render_window = self.parent.GetRenderWindow()
+            render_window.Render()
+        if key == 'd':
+            if not self.glyph_actor:
+                print(' PlotVTK: no vectors found')
+                return
+            if self.warp_factor > 100:
+                self.warp_factor = 0
+                self.mapper.SetInputData(self.polydata)
+            print(' PlotVTK: warp scale factor {}%'.format(self.warp_factor))
+            self.warp_filter.SetInputData(self.polydata)
+            self.warp_filter.SetScaleFactor(self.warp_factor / 100)
+            self.warp_filter.Update()
+            self.mapper.SetInputData(self.warp_filter.GetOutput())
+            render_window = self.parent.GetRenderWindow()
+            render_window.Render()
+            self.warp_factor += 10
         return
 
     def close_window(self):
@@ -88,9 +120,6 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.parent.TerminateApp()
         del render_window, self.parent
 
-
-# TODO add dvf with glyph
-# TODO add multiview? reference / moving / deformation vector field
 def plot_vtk(polydata, secondary=None, opacity=.5):
     '''
     :param polydata: polydata or list of polydata to plot
@@ -148,19 +177,39 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
         sec_actor.GetProperty().SetOpacity(opacity)
         sec_actor.SetMapper(sec_mapper)
 
+    if polydata.GetPointData().GetVectors():
+        # Set up the glyph filter
+        glyph = vtk.vtkGlyph3D()
+        glyph_mapper = vtk.vtkDataSetMapper()
+        glyph_actor = vtk.vtkActor()
+        # define glyph filter
+        glyph.SetInputData(polydata)
+        glyph.SetScaleModeToScaleByVector()
+        glyph.Update()
+        # define glyph mapper and actor
+        glyph_mapper = vtk.vtkDataSetMapper()
+        glyph_mapper.SetInputConnection(glyph.GetOutputPort())
+        glyph_actor = vtk.vtkActor()
+        glyph_actor.GetProperty().SetOpacity(0.1)
+        glyph_actor.SetMapper(glyph_mapper)
+    else:
+        glyph_actor = None
+
     # Scalar bar actor
-    scalarBar = vtk.vtkScalarBarActor()
-    scalarBar.SetLookupTable(mapper.GetLookupTable())
-    # scalarBar.SetTitle("")
-    scalarBar.SetNumberOfLabels(4)
-    scalarBar.SetBarRatio(0.1)
+    scalar_bar = vtk.vtkScalarBarActor()
+    scalar_bar.SetLookupTable(mapper.GetLookupTable())
+    # scalar_bar.SetTitle("")
+    scalar_bar.SetNumberOfLabels(4)
+    scalar_bar.SetBarRatio(0.3)
+    scalar_bar.SetHeight(0.3)
     text_property = vtk.vtkTextProperty()
-    text_property.SetColor(0,0,0)
-    text_property.SetFontSize(8)
+    text_property.SetColor(0, 0, 0)
+    # text_property.SetFontSize(12)
     text_property.SetItalic(False)
     text_property.SetShadow(False)
-    scalarBar.SetLabelTextProperty(text_property)
-    scalarBar.SetTitleTextProperty(text_property)
+    scalar_bar.SetLabelTextProperty(text_property)
+    scalar_bar.SetAnnotationTextProperty(text_property)
+    scalar_bar.SetTitleTextProperty(text_property)
 
     # Create the Renderer
     renderer = vtk.vtkRenderer()
@@ -176,7 +225,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     # Create the RendererWindowInteractor and display the vtk_file
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renderer_window)
-    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor, mapper))
+    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor, mapper, glyph_actor))
 
     om.SetInteractor(interactor)
     om.EnabledOn()
@@ -186,8 +235,8 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     renderer.AddActor(actor)
     if secondary:
         renderer.AddActor(sec_actor)
-
-    renderer.AddActor2D(scalarBar)
+    renderer.AddActor(glyph_actor)
+    renderer.AddActor2D(scalar_bar)
 
     # add corner annotation
     cornerAnnotation = vtk.vtkCornerAnnotation()
@@ -195,7 +244,8 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     cornerAnnotation.SetNonlinearFontScaleFactor(1)
     cornerAnnotation.SetMaximumFontSize(20)
     # cornerAnnotation.SetText(0, "lower left")
-    cornerAnnotation.SetText(1, "Press key T to toggle scalars\nPress key Q to quit")
+    cornerAnnotation.SetText(1, "{}\n{}\n{}\n{}".format('Press key T to toggle scalars', 'Press key G to toggle glyphs',
+                                                        'Press key D to deform (10%)', 'Press key Q to quit'))
     # cornerAnnotation.SetText(2, "upper left")
     # cornerAnnotation.SetText(3, "upper right")
     cornerAnnotation.GetTextProperty().SetColor(colors.GetColor3d("Black"))
