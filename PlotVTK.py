@@ -8,6 +8,7 @@
 
 import numpy as np
 import vtk
+from numpy import poly1d
 from vtk.util import numpy_support
 
 
@@ -47,7 +48,8 @@ def append_polydata(polydata_list=[]):
         if 'label_color' not in array_names:
             label_color = numpy_support.numpy_to_vtk(i * np.ones(temp.GetNumberOfPoints()))
             label_color.SetName('label_color')
-            temp.GetPointData().SetScalars(label_color)
+            temp.GetPointData().AddArray(label_color)
+            temp.GetPointData().SetActiveScalars('label_color')
         append_filter.AddInputData(temp)
         i += 1
     append_filter.Update()
@@ -55,15 +57,29 @@ def append_polydata(polydata_list=[]):
 
 
 class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, mapper=None):
         self.parent = parent
+        self.mapper = mapper
+        self.polydata = mapper.GetInput()
+        self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
+                            range(self.polydata.GetPointData().GetNumberOfArrays())]
+        self.index_scalar = 0
         self.AddObserver("KeyPressEvent", self.key_press_event)
 
     def key_press_event(self, obj, event):
         key = self.parent.GetKeySym()
         if key == 'q':
-            print('closing PlotVTK window')
+            print(' PlotVTK: closing PlotVTK window')
             self.close_window()
+        if key == 't':
+            self.index_scalar += 1
+            if self.index_scalar == len(self.array_names):
+                self.index_scalar = 0
+            print(' PlotVTK: changing scalar to {}'.format(self.array_names[self.index_scalar]))
+            self.polydata.GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
+            self.mapper.SetScalarRange(self.polydata.GetPointData().GetArray(self.index_scalar).GetRange())
+            render_window = self.parent.GetRenderWindow()
+            render_window.Render()
         return
 
     def close_window(self):
@@ -103,7 +119,6 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     camera.SetViewUp(0, 0, 1)
 
     colors = vtk.vtkNamedColors()
-    scalar_range = polydata.GetScalarRange()
 
     # Create axes actor
     xyzLabels = ['X', 'Y', 'Z']
@@ -118,7 +133,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     # into graphics elements
     mapper = vtk.vtkDataSetMapper()
     mapper.SetInputData(polydata)
-    mapper.SetScalarRange(scalar_range)
+    mapper.SetScalarRange(polydata.GetScalarRange())
 
     # Create the Actor
     actor = vtk.vtkActor()
@@ -128,10 +143,24 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     if secondary:
         sec_mapper = vtk.vtkDataSetMapper()
         sec_mapper.SetInputData(secondary)
-        sec_mapper.SetScalarRange(scalar_range)
+        sec_mapper.SetScalarRange(secondary.GetScalarRange())
         sec_actor = vtk.vtkActor()
         sec_actor.GetProperty().SetOpacity(opacity)
         sec_actor.SetMapper(sec_mapper)
+
+    # Scalar bar actor
+    scalarBar = vtk.vtkScalarBarActor()
+    scalarBar.SetLookupTable(mapper.GetLookupTable())
+    # scalarBar.SetTitle("")
+    scalarBar.SetNumberOfLabels(4)
+    scalarBar.SetBarRatio(0.1)
+    text_property = vtk.vtkTextProperty()
+    text_property.SetColor(0,0,0)
+    text_property.SetFontSize(8)
+    text_property.SetItalic(False)
+    text_property.SetShadow(False)
+    scalarBar.SetLabelTextProperty(text_property)
+    scalarBar.SetTitleTextProperty(text_property)
 
     # Create the Renderer
     renderer = vtk.vtkRenderer()
@@ -142,12 +171,12 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     renderer_window = vtk.vtkRenderWindow()
     renderer_window.SetWindowName('PlotVTK')
     renderer_window.AddRenderer(renderer)
-    renderer_window.SetSize(600, 600)
+    renderer_window.SetSize(800, 800)
 
     # Create the RendererWindowInteractor and display the vtk_file
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renderer_window)
-    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor))
+    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor, mapper))
 
     om.SetInteractor(interactor)
     om.EnabledOn()
@@ -158,13 +187,15 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     if secondary:
         renderer.AddActor(sec_actor)
 
+    renderer.AddActor2D(scalarBar)
+
     # add corner annotation
     cornerAnnotation = vtk.vtkCornerAnnotation()
     cornerAnnotation.SetLinearFontScaleFactor(2)
     cornerAnnotation.SetNonlinearFontScaleFactor(1)
     cornerAnnotation.SetMaximumFontSize(20)
     # cornerAnnotation.SetText(0, "lower left")
-    cornerAnnotation.SetText(1, "Press key Q to quit")
+    cornerAnnotation.SetText(1, "Press key T to toggle scalars\nPress key Q to quit")
     # cornerAnnotation.SetText(2, "upper left")
     # cornerAnnotation.SetText(3, "upper right")
     cornerAnnotation.GetTextProperty().SetColor(colors.GetColor3d("Black"))
