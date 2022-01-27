@@ -1,6 +1,7 @@
 # PlotVTK
 
 ## Table of contents
+
 * [General info](#general-info)
 * [Example](#example)
 * [Dependencies](#dependencies)
@@ -9,20 +10,17 @@
 
 | Features                                    | Status             |
 |---------------------------------------------|--------------------|
-| Append multiple polydata                    | :white_check_mark:	|
+| Append multiple polydata                    | :white_check_mark:     |
 | Display two separate polydata (fixed/moving) | :white_check_mark: |
-| Toggle between the available scalars        | :white_check_mark:	 |
-| Toggle glyph if vectors are present         | :white_check_mark:	 |
-| Apply 10% deformation (if vectors)          | :white_check_mark:	 |
-| Show colorbar                               | :white_check_mark:	 |
+| Toggle between the available scalars        | :white_check_mark:     |
+| Toggle glyph if vectors are present         | :white_check_mark:     |
+| Apply 10% deformation (if vectors)          | :white_check_mark:     |
+| Show colorbar                               | :white_check_mark:     |
 
-Bastien Rigaud, PhD
-Laboratoire Traitement du Signal et de l'Image (LTSI), INSERM U1099
-Campus de Beaulieu, Université de Rennes 1
-35042 Rennes, FRANCE
-bastien.rigaud@univ-rennes1.fr
+Bastien Rigaud, PhD Laboratoire Traitement du Signal et de l'Image (LTSI), INSERM U1099 Campus de Beaulieu, Université
+de Rennes 1 35042 Rennes, FRANCE bastien.rigaud@univ-rennes1.fr
 
-## Example 
+## Example
 
 <p align="center">
 <img src="example/plot.png" height=350>    
@@ -65,7 +63,6 @@ bastien.rigaud@univ-rennes1.fr
 
 ## Dependencies
 
-Run:
 ```
 pip install -r requirements.txt
 ```
