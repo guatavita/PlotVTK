@@ -200,7 +200,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
         glyph_mapper = vtk.vtkDataSetMapper()
         glyph_mapper.SetInputConnection(glyph.GetOutputPort())
         glyph_actor = vtk.vtkActor()
-        glyph_actor.GetProperty().SetOpacity(0.1)
+        glyph_actor.GetProperty().SetOpacity(0.2)
         glyph_actor.SetMapper(glyph_mapper)
     else:
         glyph_actor = None
@@ -215,7 +215,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     scalar_bar.SetOrientationToHorizontal()
     scalar_bar.SetHeight(0.1)
     scalar_bar.SetWidth(0.6)
-    scalar_bar.SetPosition(0.0,0.0)
+    scalar_bar.SetPosition(0.2,0.8)
     text_property = vtk.vtkTextProperty()
     text_property.SetColor(0, 0, 0)
     # text_property.SetFontSize(12)
