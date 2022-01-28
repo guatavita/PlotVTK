@@ -70,7 +70,7 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.warp_sign = 1
         self.warp_factor = 0
         self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
-                            range(self.polydata.GetPointData().GetNumberOfArrays())]
+                            range(self.polydata.GetPointData().GetNumberOfArrays())]+[None]
         self.index_scalar = 0
         self.AddObserver("KeyPressEvent", self.key_press_event)
 
@@ -87,8 +87,12 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             if self.index_scalar == len(self.array_names):
                 self.index_scalar = 0
             print(' PlotVTK: changing scalar to {}'.format(self.array_names[self.index_scalar]))
-            self.mapper.GetInput().GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
-            self.mapper.SetScalarRange(self.polydata.GetPointData().GetArray(self.index_scalar).GetRange())
+            if self.array_names[self.index_scalar]:
+                self.mapper.GetInput().GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
+                self.mapper.SetScalarRange(self.polydata.GetPointData().GetArray(self.index_scalar).GetRange())
+            else:
+                self.mapper.ScalarVisibilityOff()
+
             render_window = self.parent.GetRenderWindow()
             render_window.Render()
         if key == 'g':
