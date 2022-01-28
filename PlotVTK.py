@@ -254,9 +254,9 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     cornerAnnotation.SetNonlinearFontScaleFactor(1)
     cornerAnnotation.SetMaximumFontSize(20)
     # cornerAnnotation.SetText(0, "lower left")
-    cornerAnnotation.SetText(1, "{}\n{}\n{}\n{}".format('Press key T to toggle scalars', 'Press key G to toggle glyphs',
-                                                        'Press key D to deform (5%)', 'Press key O for opacity (10%)',
-                                                        'Press key Q to quit'))
+    cornerAnnotation.SetText(1, "{}\n{}\n{}\n{}\n{}\n{}".format('Press key:', 'T to toggle scalars',
+                                                                'G to toggle glyphs', 'D to deform (5%)',
+                                                                'O for opacity (10%)', 'Q to quit'))
     # cornerAnnotation.SetText(2, "upper left")
     # cornerAnnotation.SetText(3, "upper right")
     cornerAnnotation.GetTextProperty().SetColor(colors.GetColor3d("Black"))
