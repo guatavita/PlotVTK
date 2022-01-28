@@ -105,7 +105,7 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 return
             if self.warp_factor > 100 or self.warp_factor < 0:
                 self.warp_sign = -1*self.warp_sign
-            self.warp_factor = self.warp_filter+self.warp_sign*self.factor_step
+            self.warp_factor = self.warp_factor+self.warp_sign*self.factor_step
             print(' PlotVTK: warp scale factor {}%'.format(self.warp_factor))
             self.warp_filter.SetInputData(self.polydata)
             self.warp_filter.SetScaleFactor(self.warp_factor / 100)
