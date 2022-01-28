@@ -66,9 +66,12 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.polydata = vtk.vtkPolyData()
         self.polydata.DeepCopy(mapper.GetInput())
         self.warp_filter = vtk.vtkWarpVector()
-        self.factor_step = 5
+        self.warp_step = 5
         self.warp_sign = 1
         self.warp_factor = 0
+        self.opacity_factor = self.mapper.GetProperty().GetOpacity()
+        self.opacity_sign = 1
+        self.opacity_step = 10
         self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
                             range(self.polydata.GetPointData().GetNumberOfArrays())]+[None]
         self.index_scalar = 0
@@ -88,26 +91,22 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 self.index_scalar = 0
             print(' PlotVTK: changing scalar to {}'.format(self.array_names[self.index_scalar]))
             if self.array_names[self.index_scalar]:
+                self.mapper.ScalarVisibilityOn()
                 self.mapper.GetInput().GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
                 self.mapper.SetScalarRange(self.polydata.GetPointData().GetArray(self.index_scalar).GetRange())
             else:
                 self.mapper.ScalarVisibilityOff()
-
-            render_window = self.parent.GetRenderWindow()
-            render_window.Render()
         if key == 'g':
             if not self.glyph_actor:
                 print(' PlotVTK: no vectors found')
                 return
             current_opacity = self.glyph_actor.GetProperty().GetOpacity()
             self.glyph_actor.GetProperty().SetOpacity(abs(current_opacity - self.glyph_opacity))
-            render_window = self.parent.GetRenderWindow()
-            render_window.Render()
         if key == 'd':
             if not self.glyph_actor:
                 print(' PlotVTK: no vectors found')
                 return
-            self.warp_factor = self.warp_factor+self.warp_sign*self.factor_step
+            self.warp_factor = self.warp_factor+self.warp_sign*self.warp_step
             if self.warp_factor == 100 or self.warp_factor == 0:
                 self.warp_sign = -1*self.warp_sign
             print(' PlotVTK: warp scale factor {}%'.format(self.warp_factor))
@@ -115,8 +114,13 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.warp_filter.SetScaleFactor(self.warp_factor / 100)
             self.warp_filter.Update()
             self.mapper.SetInputData(self.warp_filter.GetOutput())
-            render_window = self.parent.GetRenderWindow()
-            render_window.Render()
+        if key == 'o':
+            print(' PlotVTK: opacity to {}%'.format(self.opacity_factor))
+            if self.opacity_factor == 100 or self.opacity_factor == 0:
+                self.opacity_sign = -1*self.opacity_sign
+            self.mapper.GetProperty().SetOpacity(self.opacity_factor/100)
+        render_window = self.parent.GetRenderWindow()
+        render_window.Render()
         return
 
     def close_window(self):
@@ -250,7 +254,8 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     cornerAnnotation.SetMaximumFontSize(20)
     # cornerAnnotation.SetText(0, "lower left")
     cornerAnnotation.SetText(1, "{}\n{}\n{}\n{}".format('Press key T to toggle scalars', 'Press key G to toggle glyphs',
-                                                        'Press key D to deform (10%)', 'Press key Q to quit'))
+                                                        'Press key D to deform (5%)', 'Press key O for opacity (10%)',
+                                                        'Press key Q to quit'))
     # cornerAnnotation.SetText(2, "upper left")
     # cornerAnnotation.SetText(3, "upper right")
     cornerAnnotation.GetTextProperty().SetColor(colors.GetColor3d("Black"))
