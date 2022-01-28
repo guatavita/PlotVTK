@@ -195,11 +195,14 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
         # define glyph filter
         glyph.SetInputData(polydata)
         glyph.SetScaleModeToScaleByVector()
+        glyph.SetColorModeToColorByVector()
+        glyph.SetRange(polydata.GetPointData().GetVectors().GetRange(-1))
+        glyph.OrientOn()
         glyph.Update()
         # define glyph mapper and actor
-        glyph_mapper = vtk.vtkDataSetMapper()
         glyph_mapper.SetInputConnection(glyph.GetOutputPort())
-        glyph_actor = vtk.vtkActor()
+        # glyph_mapper.SetScalarModeToUsePointFieldData()
+        glyph_mapper.SetScalarRange(polydata.GetPointData().GetVectors().GetRange(-1))
         glyph_actor.GetProperty().SetOpacity(0.2)
         glyph_actor.SetMapper(glyph_mapper)
     else:
