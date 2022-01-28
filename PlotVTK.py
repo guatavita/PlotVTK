@@ -66,7 +66,9 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.polydata = vtk.vtkPolyData()
         self.polydata.DeepCopy(mapper.GetInput())
         self.warp_filter = vtk.vtkWarpVector()
-        self.warp_factor = 10
+        self.factor_step = 5
+        self.warp_sign = 1
+        self.warp_factor = 0
         self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
                             range(self.polydata.GetPointData().GetNumberOfArrays())]
         self.index_scalar = 0
@@ -101,9 +103,9 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             if not self.glyph_actor:
                 print(' PlotVTK: no vectors found')
                 return
-            if self.warp_factor > 100:
-                self.warp_factor = 0
-                self.mapper.SetInputData(self.polydata)
+            if self.warp_factor > 100 or self.warp_factor < 0:
+                self.warp_sign = -1*self.warp_sign
+            self.warp_factor = self.warp_filter+self.warp_sign*self.factor_step
             print(' PlotVTK: warp scale factor {}%'.format(self.warp_factor))
             self.warp_filter.SetInputData(self.polydata)
             self.warp_filter.SetScaleFactor(self.warp_factor / 100)
@@ -111,7 +113,6 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.mapper.SetInputData(self.warp_filter.GetOutput())
             render_window = self.parent.GetRenderWindow()
             render_window.Render()
-            self.warp_factor += 10
         return
 
     def close_window(self):
