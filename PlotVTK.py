@@ -57,19 +57,19 @@ def append_polydata(polydata_list=[]):
 
 
 class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
-    def __init__(self, parent=None, mapper=None, glyph_actor=None):
+    def __init__(self, parent, mapper, actor, glyph_actor=None):
         self.parent = parent
         self.mapper = mapper
+        self.actor = actor
         self.glyph_actor = glyph_actor
         self.glyph_opacity = glyph_actor.GetProperty().GetOpacity() if glyph_actor else 0.0
-
         self.polydata = vtk.vtkPolyData()
         self.polydata.DeepCopy(mapper.GetInput())
         self.warp_filter = vtk.vtkWarpVector()
         self.warp_step = 5
         self.warp_sign = 1
         self.warp_factor = 0
-        self.opacity_factor = self.mapper.GetProperty().GetOpacity()
+        self.opacity_factor = self.actor.GetProperty().GetOpacity()
         self.opacity_sign = 1
         self.opacity_step = 10
         self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
@@ -118,7 +118,7 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             print(' PlotVTK: opacity to {}%'.format(self.opacity_factor))
             if self.opacity_factor == 100 or self.opacity_factor == 0:
                 self.opacity_sign = -1*self.opacity_sign
-            self.mapper.GetProperty().SetOpacity(self.opacity_factor/100)
+            self.actor.GetProperty().SetOpacity(self.opacity_factor/100)
         render_window = self.parent.GetRenderWindow()
         render_window.Render()
         return
@@ -234,7 +234,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     # Create the RendererWindowInteractor and display the vtk_file
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renderer_window)
-    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor, mapper, glyph_actor))
+    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor, mapper, actor, glyph_actor))
 
     om.SetInteractor(interactor)
     om.EnabledOn()
