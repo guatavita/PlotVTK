@@ -57,10 +57,12 @@ def append_polydata(polydata_list=[]):
 
 
 class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
-    def __init__(self, parent, mapper, actor, glyph_actor=None):
+    def __init__(self, parent, mapper, actor, corner_annotation, scalar_bar, glyph_actor=None):
         self.parent = parent
         self.mapper = mapper
         self.actor = actor
+        self.corner_annotation = corner_annotation
+        self.scalar_bar = scalar_bar
         self.glyph_actor = glyph_actor
         self.glyph_opacity = glyph_actor.GetProperty().GetOpacity() if glyph_actor else 0.0
         self.polydata = vtk.vtkPolyData()
@@ -69,13 +71,19 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.warp_step = 5
         self.warp_sign = 1
         self.warp_factor = 0
-        self.opacity_factor = 100*self.actor.GetProperty().GetOpacity()
+        self.opacity_factor = int(100 * self.actor.GetProperty().GetOpacity())
         self.opacity_sign = 1
         self.opacity_step = 10
         self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
-                            range(self.polydata.GetPointData().GetNumberOfArrays())]+[None]
+                            range(self.polydata.GetPointData().GetNumberOfArrays())] + [None]
         self.index_scalar = 0
+        self.update_annotations()
         self.AddObserver("KeyPressEvent", self.key_press_event)
+
+    def update_annotations(self):
+        self.corner_annotation.SetText(1,
+                                       "Press key:\nT to toggle scalars\nG to toggle glyphs\nD to deform ({:03d}%)\nO "
+                                       "for opacity ({:03d}%)\nQ to quit".format(self.warp_factor, self.opacity_factor))
 
     def key_press_event(self, obj, event):
         key = self.parent.GetKeySym()
@@ -89,7 +97,7 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.index_scalar += 1
             if self.index_scalar == len(self.array_names):
                 self.index_scalar = 0
-            print(' PlotVTK: changing scalar to {}'.format(self.array_names[self.index_scalar]))
+            self.scalar_bar.SetTitle(self.array_names[self.index_scalar])
             if self.array_names[self.index_scalar]:
                 self.mapper.ScalarVisibilityOn()
                 self.mapper.GetInput().GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
@@ -106,20 +114,19 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             if not self.glyph_actor:
                 print(' PlotVTK: no vectors found')
                 return
-            self.warp_factor = self.warp_factor+self.warp_sign*self.warp_step
+            self.warp_factor = self.warp_factor + self.warp_sign * self.warp_step
             if self.warp_factor == 100 or self.warp_factor == 0:
-                self.warp_sign = -1*self.warp_sign
-            print(' PlotVTK: warp scale factor {}%'.format(self.warp_factor))
+                self.warp_sign = -1 * self.warp_sign
             self.warp_filter.SetInputData(self.polydata)
             self.warp_filter.SetScaleFactor(self.warp_factor / 100)
             self.warp_filter.Update()
             self.mapper.SetInputData(self.warp_filter.GetOutput())
         if key == 'o':
-            self.opacity_factor = self.opacity_factor+self.opacity_sign*self.opacity_step
-            print(' PlotVTK: opacity to {}%'.format(self.opacity_factor))
+            self.opacity_factor = self.opacity_factor + self.opacity_sign * self.opacity_step
             if self.opacity_factor == 100 or self.opacity_factor == 0:
-                self.opacity_sign = -1*self.opacity_sign
-            self.actor.GetProperty().SetOpacity(self.opacity_factor/100)
+                self.opacity_sign = -1 * self.opacity_sign
+            self.actor.GetProperty().SetOpacity(self.opacity_factor / 100)
+        self.update_annotations()
         render_window = self.parent.GetRenderWindow()
         render_window.Render()
         return
@@ -129,6 +136,7 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         render_window.Finalize()
         self.parent.TerminateApp()
         del render_window, self.parent
+
 
 def plot_vtk(polydata, secondary=None, opacity=.5):
     '''
@@ -211,14 +219,14 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     # Scalar bar actor
     scalar_bar = vtk.vtkScalarBarActor()
     scalar_bar.SetLookupTable(mapper.GetLookupTable())
-    # scalar_bar.SetTitle("")
+    scalar_bar.SetTitle(polydata.GetPointData().GetScalars().GetName())  # get name of the active scalar
     scalar_bar.SetNumberOfLabels(4)
     # scalar_bar.SetBarRatio(0.3)
     # scalar_bar.SetHeight(0.3)
     scalar_bar.SetOrientationToHorizontal()
     scalar_bar.SetHeight(0.1)
     scalar_bar.SetWidth(0.6)
-    scalar_bar.SetPosition(0.2,0.9)
+    scalar_bar.SetPosition(0.2, 0.9)
     text_property = vtk.vtkTextProperty()
     text_property.SetColor(0, 0, 0)
     # text_property.SetFontSize(12)
@@ -239,10 +247,19 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     renderer_window.AddRenderer(renderer)
     renderer_window.SetSize(800, 800)
 
+    # add corner annotation
+    corner_annotation = vtk.vtkCornerAnnotation()
+    corner_annotation.SetLinearFontScaleFactor(2)
+    corner_annotation.SetNonlinearFontScaleFactor(1)
+    corner_annotation.SetMaximumFontSize(20)
+    corner_annotation.GetTextProperty().SetColor(colors.GetColor3d("Black"))
+    corner_annotation.GetTextProperty().SetJustificationToRight()
+
     # Create the RendererWindowInteractor and display the vtk_file
     interactor = vtk.vtkRenderWindowInteractor()
     interactor.SetRenderWindow(renderer_window)
-    interactor.SetInteractorStyle(KeyPressInteractorStyle(interactor, mapper, actor, glyph_actor))
+    interactor.SetInteractorStyle(
+        KeyPressInteractorStyle(interactor, mapper, actor, corner_annotation, scalar_bar, glyph_actor))
 
     om.SetInteractor(interactor)
     om.EnabledOn()
@@ -254,22 +271,9 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
         renderer.AddActor(sec_actor)
     renderer.AddActor(glyph_actor)
     renderer.AddActor2D(scalar_bar)
-
-    # add corner annotation
-    cornerAnnotation = vtk.vtkCornerAnnotation()
-    cornerAnnotation.SetLinearFontScaleFactor(2)
-    cornerAnnotation.SetNonlinearFontScaleFactor(1)
-    cornerAnnotation.SetMaximumFontSize(20)
-    # cornerAnnotation.SetText(0, "lower left")
-    cornerAnnotation.SetText(1, "{}\n{}\n{}\n{}\n{}\n{}".format('Press key:', 'T to toggle scalars',
-                                                                'G to toggle glyphs', 'D to deform (5%)',
-                                                                'O for opacity (10%)', 'Q to quit'))
-    # cornerAnnotation.SetText(2, "upper left")
-    # cornerAnnotation.SetText(3, "upper right")
-    cornerAnnotation.GetTextProperty().SetColor(colors.GetColor3d("Black"))
+    renderer.AddActor(corner_annotation)
 
     # Render and interact
-    renderer.AddViewProp(cornerAnnotation)
     renderer_window.Render()
     renderer.GetActiveCamera().Zoom(.8)
     renderer_window.Render()
