@@ -213,6 +213,8 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     # scalar_bar.SetBarRatio(0.3)
     # scalar_bar.SetHeight(0.3)
     scalar_bar.SetOrientationToHorizontal()
+    scalar_bar.SetHeight(0.1)
+    scalar_bar.SetWidth(0.5)
     scalar_bar.SetPosition(0,0.5)
     text_property = vtk.vtkTextProperty()
     text_property.SetColor(0, 0, 0)
