@@ -69,7 +69,7 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
         self.warp_step = 5
         self.warp_sign = 1
         self.warp_factor = 0
-        self.opacity_factor = self.actor.GetProperty().GetOpacity()
+        self.opacity_factor = 100*self.actor.GetProperty().GetOpacity()
         self.opacity_sign = 1
         self.opacity_step = 10
         self.array_names = [self.polydata.GetPointData().GetArrayName(arrayid) for arrayid in
@@ -115,6 +115,7 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.warp_filter.Update()
             self.mapper.SetInputData(self.warp_filter.GetOutput())
         if key == 'o':
+            self.opacity_factor = self.opacity_factor+self.opacity_sign*self.opacity_step
             print(' PlotVTK: opacity to {}%'.format(self.opacity_factor))
             if self.opacity_factor == 100 or self.opacity_factor == 0:
                 self.opacity_sign = -1*self.opacity_sign
