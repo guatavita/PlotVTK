@@ -100,10 +100,12 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             self.scalar_bar.SetTitle(self.array_names[self.index_scalar])
             if self.array_names[self.index_scalar]:
                 self.mapper.ScalarVisibilityOn()
+                self.scalar_bar.VisibilityOn()
                 self.mapper.GetInput().GetPointData().SetActiveScalars(self.array_names[self.index_scalar])
                 self.mapper.SetScalarRange(self.polydata.GetPointData().GetArray(self.index_scalar).GetRange())
             else:
                 self.mapper.ScalarVisibilityOff()
+                self.scalar_bar.VisibilityOff()
         if key == 'g':
             if not self.glyph_actor:
                 print(' PlotVTK: no vectors found')
