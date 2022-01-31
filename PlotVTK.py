@@ -221,7 +221,6 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     # Scalar bar actor
     scalar_bar = vtk.vtkScalarBarActor()
     scalar_bar.SetLookupTable(mapper.GetLookupTable())
-    scalar_bar.SetTitle(polydata.GetPointData().GetScalars().GetName())  # get name of the active scalar
     scalar_bar.SetNumberOfLabels(4)
     # scalar_bar.SetBarRatio(0.3)
     # scalar_bar.SetHeight(0.3)
@@ -237,6 +236,10 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     scalar_bar.SetLabelTextProperty(text_property)
     scalar_bar.SetAnnotationTextProperty(text_property)
     scalar_bar.SetTitleTextProperty(text_property)
+    if polydata.GetPointData().GetScalars():
+        scalar_bar.SetTitle(polydata.GetPointData().GetScalars().GetName())  # get name of the active scalar
+    else:
+        scalar_bar.VisibilityOff()
 
     # Create the Renderer
     renderer = vtk.vtkRenderer()
