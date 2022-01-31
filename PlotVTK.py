@@ -169,15 +169,6 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
 
     colors = vtk.vtkNamedColors()
 
-    # Create axes actor
-    xyzLabels = ['X', 'Y', 'Z']
-    scale = [1.5, -1.5, 1.5]
-    axes = MakeAxesActor(scale, xyzLabels)
-    om = vtk.vtkOrientationMarkerWidget()
-    om.SetOrientationMarker(axes)
-    # Position upper left in the viewport.
-    om.SetViewport(0, 0, 0.2, 0.2)
-
     # Create the mapper that corresponds the objects of the vtk file
     # into graphics elements
     mapper = vtk.vtkDataSetMapper()
@@ -218,6 +209,12 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     else:
         glyph_actor = None
 
+    text_property = vtk.vtkTextProperty()
+    text_property.SetColor(0, 0, 0)
+    text_property.SetFontSize(12)
+    text_property.SetItalic(False)
+    text_property.SetShadow(False)
+
     # Scalar bar actor
     scalar_bar = vtk.vtkScalarBarActor()
     scalar_bar.SetLookupTable(mapper.GetLookupTable())
@@ -228,11 +225,6 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     scalar_bar.SetHeight(0.1)
     scalar_bar.SetWidth(0.6)
     scalar_bar.SetPosition(0.2, 0.9)
-    text_property = vtk.vtkTextProperty()
-    text_property.SetColor(0, 0, 0)
-    # text_property.SetFontSize(12)
-    text_property.SetItalic(False)
-    text_property.SetShadow(False)
     scalar_bar.SetLabelTextProperty(text_property)
     scalar_bar.SetAnnotationTextProperty(text_property)
     scalar_bar.SetTitleTextProperty(text_property)
@@ -266,9 +258,30 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     interactor.SetInteractorStyle(
         KeyPressInteractorStyle(interactor, mapper, actor, corner_annotation, scalar_bar, glyph_actor))
 
+    # Create axes actor
+    xyzLabels = ['X', 'Y', 'Z']
+    scale = [1.5, -1.5, 1.5]
+    axes = MakeAxesActor(scale, xyzLabels)
+    om = vtk.vtkOrientationMarkerWidget()
+    om.SetOrientationMarker(axes)
+
+    # Position upper left in the viewport.
+    om.SetViewport(0, 0, 0.2, 0.2)
     om.SetInteractor(interactor)
     om.EnabledOn()
     om.InteractiveOff()
+
+    # scale actor
+    legend_scale_actor = vtk.vtkLegendScaleActor()
+    legend_scale_actor.AllAxesOff()
+    legend_scale_actor.GetLegendTitleProperty().SetColor(0, 0, 0)
+    legend_scale_actor.GetLegendTitleProperty().SetFontSize(10)
+    legend_scale_actor.GetLegendTitleProperty().SetItalic(False)
+    legend_scale_actor.GetLegendTitleProperty().SetShadow(False)
+    legend_scale_actor.GetLegendLabelProperty().SetColor(0, 0, 0)
+    legend_scale_actor.GetLegendLabelProperty().SetFontSize(10)
+    legend_scale_actor.GetLegendLabelProperty().SetItalic(False)
+    legend_scale_actor.GetLegendLabelProperty().SetShadow(False)
 
     # Add actor to the schene
     renderer.AddActor(actor)
@@ -277,6 +290,7 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
     renderer.AddActor(glyph_actor)
     renderer.AddActor2D(scalar_bar)
     renderer.AddActor(corner_annotation)
+    renderer.AddActor(legend_scale_actor)
 
     # Render and interact
     renderer_window.Render()
