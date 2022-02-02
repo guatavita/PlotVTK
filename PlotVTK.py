@@ -235,7 +235,9 @@ def plot_vtk(polydata, secondary=None, opacity=.5):
 
     # Create the Renderer
     renderer = vtk.vtkRenderer()
-    renderer.SetBackground(1, 1, 1)  # Set background to white
+    renderer.GradientBackgroundOn()
+    renderer.SetBackground2(colors.GetColor3d("CadetBlue"))
+    renderer.SetBackground(colors.GetColor3d("White"))
     renderer.SetActiveCamera(camera)
 
     # Create the RendererWindow
