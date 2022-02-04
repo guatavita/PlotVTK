@@ -8,14 +8,15 @@
 
 ## General info
 
-| Features                                    | Status             |
-|---------------------------------------------|--------------------|
-| Append multiple polydata                    | :white_check_mark:     |
+| Features                                     | Status             |
+|----------------------------------------------|--------------------|
+| Append multiple polydata                     | :white_check_mark: |
 | Display two separate polydata (fixed/moving) | :white_check_mark: |
-| Toggle between the available scalars        | :white_check_mark:     |
-| Toggle glyph if vectors are present         | :white_check_mark:     |
-| Apply 10% deformation (if vectors)          | :white_check_mark:     |
-| Show colorbar                               | :white_check_mark:     |
+| Toggle between the available scalars         | :white_check_mark: |
+| Toggle glyph if vectors are present          | :white_check_mark: |
+| Apply 10% deformation (if vectors)           | :white_check_mark: |
+| Show colorbar                                | :white_check_mark: |
+| Save animation with 'a' if vecotors          | :construction:     |
 
 Bastien Rigaud, PhD Laboratoire Traitement du Signal et de l'Image (LTSI), INSERM U1099 Campus de Beaulieu, Université
 de Rennes 1 35042 Rennes, FRANCE bastien.rigaud@univ-rennes1.fr
