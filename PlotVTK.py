@@ -6,11 +6,15 @@
 # bastien.rigaud@univ-rennes1.fr
 # Description:
 
+import os
+from datetime import datetime
+import time
 import numpy as np
 import vtk
 from numpy import poly1d
 from vtk.util import numpy_support
-
+from PIL import Image
+from PlotScrollNumpyArrays.Plot_Scroll_Images import plot_scroll_Image
 
 def MakeAxesActor(scale, xyzLabels):
     """
@@ -82,8 +86,18 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
 
     def update_annotations(self):
         self.corner_annotation.SetText(1,
-                                       "Press key:\nT to toggle scalars\nG to toggle glyphs\nD to deform ({:03d}%)\nO "
-                                       "for opacity ({:03d}%)\nQ to quit".format(self.warp_factor, self.opacity_factor))
+                                       "Press key:\nT to toggle scalars\nG to toggle glyphs\nD to deform ({:03d}%)\n"
+                                       "A for animation\nO for opacity ({:03d}%)\nQ to quit".format(self.warp_factor,
+                                                                                                    self.opacity_factor))
+
+    def update_warper(self):
+        self.warp_factor = self.warp_factor + self.warp_sign * self.warp_step
+        if self.warp_factor == 100 or self.warp_factor == 0:
+            self.warp_sign = -1 * self.warp_sign
+        self.warp_filter.SetInputData(self.polydata)
+        self.warp_filter.SetScaleFactor(self.warp_factor / 100)
+        self.warp_filter.Update()
+        self.mapper.SetInputData(self.warp_filter.GetOutput())
 
     def key_press_event(self, obj, event):
         key = self.parent.GetKeySym()
@@ -116,13 +130,32 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
             if not self.glyph_actor:
                 print(' PlotVTK: no vectors found')
                 return
-            self.warp_factor = self.warp_factor + self.warp_sign * self.warp_step
-            if self.warp_factor == 100 or self.warp_factor == 0:
-                self.warp_sign = -1 * self.warp_sign
-            self.warp_filter.SetInputData(self.polydata)
-            self.warp_filter.SetScaleFactor(self.warp_factor / 100)
-            self.warp_filter.Update()
-            self.mapper.SetInputData(self.warp_filter.GetOutput())
+            self.update_warper()
+        if key == 'a':
+            root_dir = r'C:\PlotVTK_animations'
+            if not os.path.exists(root_dir):
+                os.makedirs(root_dir)
+            time_var = datetime.now().strftime("%Y%m%d_%H%M%S")
+            frame_list = []
+            for i in range(40):
+                self.update_warper()
+                window_to_image_filter = vtk.vtkWindowToImageFilter()
+                window_to_image_filter.SetInput(self.parent.GetRenderWindow())
+                window_to_image_filter.Update()
+                # png_writer = vtk.vtkPNGWriter()
+                # png_writer.SetFileName(r'{}_{:03d}.png'.format(time_var, i))
+                # png_writer.SetInputData(window_to_image_filter.GetOutput())
+                # png_writer.Write()
+                image = window_to_image_filter.GetOutput()
+                rows, cols, _ = image.GetDimensions()
+                sc = image.GetPointData().GetScalars()
+                numpy_image = numpy_support.vtk_to_numpy(sc)
+                numpy_image = numpy_image.reshape(rows, cols, -1)
+                numpy_image = np.flip(numpy_image, 0)
+                frame_list.append(Image.fromarray(numpy_image).convert('RGBA', dither=None))
+            img, *imgs = frame_list
+            img.save(fp=os.path.join(root_dir, r'animation_{}.gif'.format(time_var)), format='GIF', append_images=imgs,
+                     save_all=True, duration=len(frame_list)+1, loop=0, quality=100, palettesize=2048)
         if key == 'o':
             self.opacity_factor = self.opacity_factor + self.opacity_sign * self.opacity_step
             if self.opacity_factor == 100 or self.opacity_factor == 0:
