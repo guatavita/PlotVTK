@@ -132,6 +132,9 @@ class KeyPressInteractorStyle(vtk.vtkInteractorStyleTrackballCamera):
                 return
             self.update_warper()
         if key == 'a':
+            if not self.glyph_actor:
+                print(' PlotVTK: no vectors found for animation')
+                return
             root_dir = r'C:\PlotVTK_animations'
             if not os.path.exists(root_dir):
                 os.makedirs(root_dir)
